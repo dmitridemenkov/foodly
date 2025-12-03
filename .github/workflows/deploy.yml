@@ -12,6 +12,18 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Build Tailwind CSS
+      run: npm run build
     
     - name: Setup SSH
       uses: webfactory/ssh-agent@v0.8.0
@@ -30,6 +42,10 @@ jobs:
           --exclude='.ddev' \
           --exclude='node_modules' \
           --exclude='.env' \
+          --exclude='public/assets/css/input.css' \
+          --exclude='package.json' \
+          --exclude='package-lock.json' \
+          --exclude='tailwind.config.js' \
           ./ ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:${{ secrets.DEPLOY_PATH }}/
     
     - name: Set permissions
