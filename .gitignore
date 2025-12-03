@@ -31,3 +31,10 @@ check_pdo.php
 # Windows
 Thumbs.db
 desktop.ini
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Собранный CSS (генерируется автоматически)
+public/assets/css/output.css
