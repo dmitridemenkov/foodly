@@ -1,0 +1,33 @@
+# База данных (не коммитим!)
+db/*.db
+
+# DDEV (локальная среда)
+.ddev/
+
+# Логи
+*.log
+parser.log
+
+# Временные файлы
+*.tmp
+*.swp
+*~
+
+# Конфиги с паролями (если будут)
+.env
+config.local.php
+
+# Исходные данные (они большие)
+complete/
+health_diet_data/
+brands_data/
+
+# Скрипты импорта (не нужны в проде)
+import_to_sqlite.py
+merge_databases.py
+test_api.php
+check_pdo.php
+
+# Windows
+Thumbs.db
+desktop.ini
