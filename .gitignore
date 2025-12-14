@@ -42,4 +42,4 @@ sql/fix_password.sql
 sql/update_password.sql
 
 # ВАЖНО: output.css КОММИТИМ для деплоя на shared хостинг!
-# public/assets/css/output.css - НЕ игнорируем!
+# public_html/assets/css/output.css - НЕ игнорируем!

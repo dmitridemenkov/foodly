@@ -41,7 +41,7 @@ jobs:
           --exclude='.ddev' \
           --exclude='node_modules' \
           --exclude='.env' \
-          --exclude='public/assets/css/input.css' \
+          --exclude='public_html/assets/css/input.css' \
           --exclude='package.json' \
           --exclude='package-lock.json' \
           --exclude='tailwind.config.js' \

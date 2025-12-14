@@ -2,7 +2,7 @@
   "name": "foodly",
   "version": "1.0.0",
   "scripts": {
-    "build": "npx tailwindcss -i ./public/assets/css/input.css -o ./public/assets/css/output.css --minify"
+    "build": "npx tailwindcss -i ./public_html/assets/css/input.css -o ./public_html/assets/css/output.css --minify"
   },
   "devDependencies": {
     "tailwindcss": "^3.4.17"
