@@ -12,6 +12,7 @@ parser.log
 *.tmp
 *.swp
 *~
+generate_hash.php
 
 # Конфиги с паролями (если будут)
 .env
@@ -36,5 +37,9 @@ desktop.ini
 node_modules/
 package-lock.json
 
-# Собранный CSS (генерируется автоматически)
-public/assets/css/output.css
+# Временные файлы
+sql/fix_password.sql
+sql/update_password.sql
+
+# ВАЖНО: output.css КОММИТИМ для деплоя на shared хостинг!
+# public/assets/css/output.css - НЕ игнорируем!
