@@ -192,8 +192,8 @@ function renderEmptyMeals() {
 
 function updateSummary(summary) {
     const calorieGoal = window.APP_CALORIE_GOAL || 2000
-    const eaten = summary.total_calories || 0
-    const left = calorieGoal - eaten
+    const eaten = parseFloat(summary.total_calories) || 0
+    const left = Math.round((calorieGoal - eaten) * 10) / 10  // Округляем до десятых
     const progress = Math.min((eaten / calorieGoal) * 100, 100)
     
     // Обновляем калории
