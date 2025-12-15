@@ -9,8 +9,58 @@ export function initNavigation() {
         btn.addEventListener('click', (e) => {
             const screenId = e.currentTarget.dataset.screen
             switchScreen(screenId)
+            
+            // Закрываем мобильное меню при переключении
+            window.closeMobileMenu()
         })
     })
+    
+    // Инициализация мобильного меню
+    initMobileMenu()
+}
+
+// ============================================
+// МОБИЛЬНОЕ МЕНЮ
+// ============================================
+
+function initMobileMenu() {
+    window.toggleMobileMenu = toggleMobileMenu
+    window.closeMobileMenu = closeMobileMenu
+    window.openMobileMenu = openMobileMenu
+}
+
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar')
+    const overlay = document.getElementById('sidebar-overlay')
+    const icon = document.getElementById('burger-icon')
+    
+    if (sidebar.classList.contains('open')) {
+        closeMobileMenu()
+    } else {
+        openMobileMenu()
+    }
+}
+
+function openMobileMenu() {
+    const sidebar = document.getElementById('sidebar')
+    const overlay = document.getElementById('sidebar-overlay')
+    const icon = document.getElementById('burger-icon')
+    
+    sidebar.classList.add('open')
+    overlay.classList.add('open')
+    icon.textContent = 'close'
+    document.body.style.overflow = 'hidden'
+}
+
+function closeMobileMenu() {
+    const sidebar = document.getElementById('sidebar')
+    const overlay = document.getElementById('sidebar-overlay')
+    const icon = document.getElementById('burger-icon')
+    
+    sidebar.classList.remove('open')
+    overlay.classList.remove('open')
+    icon.textContent = 'menu'
+    document.body.style.overflow = ''
 }
 
 function switchScreen(screenId) {
@@ -45,6 +95,11 @@ function switchScreen(screenId) {
     if (screen) {
         screen.classList.remove('hidden')
         screen.classList.add('active')
+    }
+    
+    // Загружаем данные для экрана "Мои продукты"
+    if (screenId === 'my-products' && window.loadMyProducts) {
+        window.loadMyProducts()
     }
     
     // Активируем кнопку

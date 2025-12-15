@@ -60,12 +60,75 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
         body.fonts-loaded {
             visibility: visible;
         }
+        
+        /* Мобильное меню */
+        @media (max-width: 991px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+                box-shadow: none;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            }
+            
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: 15;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            
+            .sidebar-overlay.open {
+                display: block;
+                opacity: 1;
+            }
+            
+            .burger-btn {
+                display: flex !important;
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .sidebar-overlay {
+                display: none !important;
+            }
+            
+            .burger-btn {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-background-light dark:bg-background-dark font-display text-text-primary antialiased h-screen overflow-hidden flex">
 
+<!-- Overlay для мобильного меню -->
+<div id="sidebar-overlay" class="sidebar-overlay" onclick="window.closeMobileMenu()"></div>
+
+<!-- Кнопка бургер (мобильная) -->
+<button 
+    id="burger-btn"
+    onclick="window.toggleMobileMenu()"
+    class="burger-btn hidden fixed top-4 right-4 z-30 w-12 h-12 bg-white dark:bg-[#152822] rounded-xl shadow-lg items-center justify-center text-text-primary dark:text-white border border-[#dbe6e2] dark:border-[#2a3f38]"
+>
+    <span class="material-symbols-outlined text-2xl" id="burger-icon">menu</span>
+</button>
+
 <!-- Sidebar -->
-<aside class="w-[350px] h-full bg-white dark:bg-[#152822] flex flex-col border-r border-[#dbe6e2] dark:border-[#2a3f38] flex-shrink-0 z-20 overflow-y-auto hide-scrollbar">
+<aside id="sidebar" class="sidebar w-[350px] h-full bg-white dark:bg-[#152822] flex flex-col border-r border-[#dbe6e2] dark:border-[#2a3f38] flex-shrink-0 z-20 overflow-y-auto hide-scrollbar">
     <!-- Logo -->
     <div class="px-6 py-8">
         <div class="flex items-center gap-3">
@@ -99,6 +162,10 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
         <button data-screen="favorites" class="nav-btn flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-[#1c3029] rounded-xl group transition-all">
             <span class="material-symbols-outlined text-text-secondary group-hover:text-text-primary dark:group-hover:text-white">favorite</span>
             <span class="text-sm font-medium text-text-secondary group-hover:text-text-primary dark:group-hover:text-white">Избранное</span>
+        </button>
+        <button data-screen="my-products" class="nav-btn flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-[#1c3029] rounded-xl group transition-all">
+            <span class="material-symbols-outlined text-text-secondary group-hover:text-text-primary dark:group-hover:text-white">grocery</span>
+            <span class="text-sm font-medium text-text-secondary group-hover:text-text-primary dark:group-hover:text-white">Мои продукты</span>
         </button>
         <a href="/logout.php" class="flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-[#1c3029] rounded-xl group transition-all">
             <span class="material-symbols-outlined text-text-secondary group-hover:text-red-500">logout</span>
@@ -215,6 +282,66 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
         </div>
     </section>
     
+    <!-- My Products Screen -->
+    <section id="my-products" class="screen hidden">
+        <div class="w-full px-8 py-10">
+            <!-- Заголовок + кнопки добавления -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <h2 class="text-3xl font-bold text-text-primary dark:text-white">Мои продукты</h2>
+                <div class="flex flex-wrap gap-3">
+                    <button 
+                        onclick="window.openCreateProductModal()"
+                        class="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl font-medium transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-lg">add</span>
+                        Добавить продукт
+                    </button>
+                    <button 
+                        onclick="window.openCreateRecipeModal()"
+                        class="flex items-center gap-2 px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-medium transition-colors"
+                    >
+                        <span class="material-symbols-outlined text-lg">add</span>
+                        Добавить блюдо
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Табы: Продукты / Блюда -->
+            <div class="flex gap-2 mb-6">
+                <button 
+                    id="tab-products" 
+                    onclick="window.switchMyProductsTab('products')"
+                    class="px-4 py-2 bg-primary text-white rounded-lg font-medium transition-colors"
+                >
+                    Продукты
+                </button>
+                <button 
+                    id="tab-recipes" 
+                    onclick="window.switchMyProductsTab('recipes')"
+                    class="px-4 py-2 bg-background-light dark:bg-[#1c3029] text-text-secondary rounded-lg font-medium transition-colors hover:text-text-primary"
+                >
+                    Блюда
+                </button>
+            </div>
+            
+            <!-- Список продуктов -->
+            <div id="my-products-list" class="flex flex-col gap-3">
+                <div class="text-center py-12 text-text-secondary">
+                    <span class="material-symbols-outlined text-5xl mb-3">inventory_2</span>
+                    <p>Загрузка...</p>
+                </div>
+            </div>
+            
+            <!-- Список блюд (скрыт по умолчанию) -->
+            <div id="my-recipes-list" class="hidden flex flex-col gap-3">
+                <div class="text-center py-12 text-text-secondary">
+                    <span class="material-symbols-outlined text-5xl mb-3">menu_book</span>
+                    <p>Загрузка...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
 </main>
 
 <!-- Раскрывающаяся панель добавления продукта -->
@@ -323,6 +450,293 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
                 class="flex-1 px-4 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-colors"
             >
                 Удалить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка создания своего продукта -->
+<div id="create-product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Создать продукт</h3>
+            <button onclick="window.closeCreateProductModal()" class="text-text-secondary hover:text-text-primary transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+            <!-- Название -->
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">
+                    Название продукта
+                </label>
+                <input 
+                    type="text" 
+                    id="new-product-title"
+                    placeholder="Например: Творог домашний"
+                    class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-primary focus:outline-none transition-colors"
+                >
+            </div>
+            
+            <!-- КБЖУ на 100г -->
+            <p class="text-xs text-text-secondary -mb-2">Пищевая ценность на 100г:</p>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Калории</label>
+                    <input 
+                        type="number" 
+                        id="new-product-calories"
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors"
+                    >
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Белки (г)</label>
+                    <input 
+                        type="number" 
+                        id="new-product-proteins"
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors"
+                    >
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Жиры (г)</label>
+                    <input 
+                        type="number" 
+                        id="new-product-fats"
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors"
+                    >
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Углеводы (г)</label>
+                    <input 
+                        type="number" 
+                        id="new-product-carbs"
+                        placeholder="0"
+                        min="0"
+                        step="0.1"
+                        class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors"
+                    >
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-3 mt-6">
+            <button 
+                onclick="window.closeCreateProductModal()"
+                class="flex-1 px-4 py-3 bg-background-light dark:bg-[#1c3029] text-text-primary dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-[#2a3f38] transition-colors"
+            >
+                Отмена
+            </button>
+            <button 
+                onclick="window.submitCreateProduct()"
+                class="flex-1 px-4 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+                <span class="material-symbols-outlined text-lg">add</span>
+                Создать
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка редактирования продукта -->
+<div id="edit-product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Редактировать продукт</h3>
+            <button onclick="window.closeEditProductModal()" class="text-text-secondary hover:text-text-primary transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <input type="hidden" id="edit-product-id">
+        
+        <div class="flex flex-col gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Название продукта</label>
+                <input type="text" id="edit-product-title" class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors">
+            </div>
+            
+            <p class="text-xs text-text-secondary -mb-2">Пищевая ценность на 100г:</p>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Калории</label>
+                    <input type="number" id="edit-product-calories" min="0" step="0.1" class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Белки (г)</label>
+                    <input type="number" id="edit-product-proteins" min="0" step="0.1" class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Жиры (г)</label>
+                    <input type="number" id="edit-product-fats" min="0" step="0.1" class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-text-secondary mb-1">Углеводы (г)</label>
+                    <input type="number" id="edit-product-carbs" min="0" step="0.1" class="w-full px-3 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-lg text-text-primary dark:text-white focus:border-primary focus:outline-none transition-colors">
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex gap-3 mt-6">
+            <button onclick="window.closeEditProductModal()" class="flex-1 px-4 py-3 bg-background-light dark:bg-[#1c3029] text-text-primary dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-[#2a3f38] transition-colors">
+                Отмена
+            </button>
+            <button onclick="window.submitEditProduct()" class="flex-1 px-4 py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-lg">save</span>
+                Сохранить
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка создания блюда -->
+<div id="create-recipe-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-8">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl my-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Создать блюдо</h3>
+            <button onclick="window.closeCreateRecipeModal()" class="text-text-secondary hover:text-text-primary transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <div class="flex flex-col gap-4">
+            <!-- Название -->
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Название блюда</label>
+                <input 
+                    type="text" 
+                    id="new-recipe-title"
+                    placeholder="Например: Творог со сметаной"
+                    class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-purple-500 focus:outline-none transition-colors"
+                >
+            </div>
+            
+            <!-- Порции -->
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Количество порций</label>
+                <input 
+                    type="number" 
+                    id="new-recipe-servings"
+                    value="1"
+                    min="1"
+                    onchange="window.renderRecipeIngredients && window.renderRecipeIngredients()"
+                    class="w-24 px-4 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white focus:border-purple-500 focus:outline-none transition-colors"
+                >
+            </div>
+            
+            <!-- Поиск ингредиентов -->
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Добавить ингредиенты</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="recipe-ingredient-search"
+                        placeholder="Поиск продуктов..."
+                        autocomplete="off"
+                        class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-purple-500 focus:outline-none transition-colors"
+                    >
+                    <div id="recipe-search-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#152822] rounded-xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-lg max-h-48 overflow-y-auto z-10">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Список ингредиентов -->
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Ингредиенты</label>
+                <div id="recipe-ingredients-list" class="bg-background-light dark:bg-[#1c3029] rounded-xl p-3 max-h-48 overflow-y-auto">
+                    <p class="text-center text-text-secondary py-4">Добавьте ингредиенты через поиск выше</p>
+                </div>
+            </div>
+            
+            <!-- Итого КБЖУ -->
+            <div id="recipe-totals"></div>
+        </div>
+        
+        <div class="flex gap-3 mt-6">
+            <button 
+                onclick="window.closeCreateRecipeModal()"
+                class="flex-1 px-4 py-3 bg-background-light dark:bg-[#1c3029] text-text-primary dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-[#2a3f38] transition-colors"
+            >
+                Отмена
+            </button>
+            <button 
+                onclick="window.submitCreateRecipe()"
+                class="flex-1 px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+                <span class="material-symbols-outlined text-lg">add</span>
+                Создать
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модалка редактирования блюда -->
+<div id="edit-recipe-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto py-8">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl p-6 max-w-lg w-full mx-4 shadow-2xl my-auto">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Редактировать блюдо</h3>
+            <button onclick="window.closeEditRecipeModal()" class="text-text-secondary hover:text-text-primary transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        
+        <input type="hidden" id="edit-recipe-id">
+        
+        <div class="flex flex-col gap-4">
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Название блюда</label>
+                <input type="text" id="edit-recipe-title" class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white focus:border-purple-500 focus:outline-none transition-colors">
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Количество порций</label>
+                <input type="number" id="edit-recipe-servings" value="1" min="1" class="w-24 px-4 py-2 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white focus:border-purple-500 focus:outline-none transition-colors">
+            </div>
+            
+            <!-- Добавление ингредиентов -->
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Добавить ингредиент</label>
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        id="edit-recipe-ingredient-search"
+                        placeholder="Поиск продуктов..."
+                        autocomplete="off"
+                        class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-purple-500 focus:outline-none transition-colors"
+                    >
+                    <div id="edit-recipe-search-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#152822] rounded-xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-lg max-h-48 overflow-y-auto z-10">
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-text-primary dark:text-white mb-2">Ингредиенты</label>
+                <div id="edit-recipe-ingredients" class="bg-background-light dark:bg-[#1c3029] rounded-xl p-3 max-h-48 overflow-y-auto">
+                    <p class="text-center text-text-secondary py-2">Загрузка...</p>
+                </div>
+            </div>
+            
+            <div id="edit-recipe-totals"></div>
+        </div>
+        
+        <div class="flex gap-3 mt-6">
+            <button onclick="window.closeEditRecipeModal()" class="flex-1 px-4 py-3 bg-background-light dark:bg-[#1c3029] text-text-primary dark:text-white rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-[#2a3f38] transition-colors">
+                Отмена
+            </button>
+            <button onclick="window.submitEditRecipe()" class="flex-1 px-4 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-lg">save</span>
+                Сохранить
             </button>
         </div>
     </div>

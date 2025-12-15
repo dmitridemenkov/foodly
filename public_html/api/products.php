@@ -8,8 +8,10 @@ use HealthDiet\Controllers\ProductController;
 header('Content-Type: application/json');
 
 Config::init();
+session_start();
 
 $action = $_GET['action'] ?? 'search';
+$method = $_SERVER['REQUEST_METHOD'];
 
 try {
     switch ($action) {
@@ -26,6 +28,41 @@ try {
         case 'calculate':
             // GET /api/products.php?action=calculate&id=123&grams=150
             $result = ProductController::calculate();
+            break;
+            
+        case 'create':
+            // POST /api/products.php?action=create
+            if ($method !== 'POST') {
+                http_response_code(405);
+                $result = ['error' => 'Метод не разрешён'];
+                break;
+            }
+            $result = ProductController::create();
+            break;
+            
+        case 'my_products':
+            // GET /api/products.php?action=my_products
+            $result = ProductController::getMyProducts();
+            break;
+            
+        case 'delete':
+            // POST /api/products.php?action=delete
+            if ($method !== 'POST') {
+                http_response_code(405);
+                $result = ['error' => 'Метод не разрешён'];
+                break;
+            }
+            $result = ProductController::delete();
+            break;
+            
+        case 'update':
+            // POST /api/products.php?action=update
+            if ($method !== 'POST') {
+                http_response_code(405);
+                $result = ['error' => 'Метод не разрешён'];
+                break;
+            }
+            $result = ProductController::update();
             break;
             
         default:

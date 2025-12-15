@@ -254,53 +254,90 @@ function createMacroCircle(label, percent, color, circumference) {
     `
 }
 
-// Удаление продукта из приёма
-let mealItemToDelete = null
+// ============================================
+// УНИВЕРСАЛЬНАЯ МОДАЛКА УДАЛЕНИЯ
+// ============================================
 
-window.deleteMealItem = function(mealItemId, productTitle) {
-    console.log('Запрос на удаление:', mealItemId)
+let deleteContext = null // { type: 'meal'|'product'|'recipe', id: number, title: string }
+
+window.showDeleteModal = function(type, id, title) {
+    deleteContext = { type, id, title }
     
-    mealItemToDelete = mealItemId
-    
-    // Показываем модалку
     const modal = document.getElementById('delete-modal')
     const text = document.getElementById('delete-modal-text')
     
-    text.textContent = productTitle ? `Удалить "${productTitle}"?` : 'Удалить этот продукт?'
+    const typeNames = {
+        'meal': 'продукт из приёма',
+        'product': 'продукт',
+        'recipe': 'блюдо'
+    }
+    
+    text.textContent = `Удалить ${typeNames[type] || 'элемент'} "${title}"?`
     modal.classList.remove('hidden')
+}
+
+// Для обратной совместимости с dashboard
+window.deleteMealItem = function(mealItemId, productTitle) {
+    window.showDeleteModal('meal', mealItemId, productTitle)
 }
 
 window.closeDeleteModal = function() {
     document.getElementById('delete-modal').classList.add('hidden')
-    mealItemToDelete = null
+    deleteContext = null
 }
 
 window.confirmDelete = async function() {
-    if (!mealItemToDelete) return
+    if (!deleteContext) return
+    
+    const { type, id } = deleteContext
     
     try {
-        const response = await fetch(`/api/meals.php?action=delete`, {
+        let url, body
+        
+        switch (type) {
+            case 'meal':
+                url = '/api/meals.php?action=delete'
+                body = { meal_id: id }
+                break
+            case 'product':
+                url = '/api/products.php?action=delete'
+                body = { product_id: id }
+                break
+            case 'recipe':
+                url = '/api/recipes.php?action=delete'
+                body = { recipe_id: id }
+                break
+            default:
+                return
+        }
+        
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                meal_id: mealItemToDelete
-            })
+            body: JSON.stringify(body)
         })
         
         const data = await response.json()
         
         if (data.success) {
-            console.log('✅ Продукт удалён!')
+            console.log(`✅ ${type} удалён!`)
             window.closeDeleteModal()
-            loadMeals()
+            
+            // Обновляем нужный список
+            if (type === 'meal') {
+                loadMeals()
+            } else if (type === 'product' && window.loadMyProducts) {
+                window.loadMyProducts()
+            } else if (type === 'recipe' && window.loadMyRecipes) {
+                window.loadMyRecipes()
+            }
         } else {
-            console.error('Ошибка удаления:', data.error)
-            alert('Ошибка: ' + data.error)
+            alert('Ошибка: ' + (data.error || 'Не удалось удалить'))
         }
         
     } catch (error) {
         console.error('Ошибка удаления:', error)
-        alert('Ошибка удаления продукта')
+        alert('Ошибка удаления')
     }
 }
 
