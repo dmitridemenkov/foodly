@@ -102,6 +102,11 @@ function switchScreen(screenId) {
         window.loadMyProducts()
     }
     
+    // Загружаем статистику при переходе
+    if (screenId === 'stats' && window.loadStats) {
+        window.loadStats()
+    }
+    
     // Активируем кнопку
     const activeBtn = document.querySelector(`[data-screen="${screenId}"]`)
     if (activeBtn) {

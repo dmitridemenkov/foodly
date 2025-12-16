@@ -18,8 +18,84 @@ export function initDashboard() {
         getCurrentDate: () => formatDate(getCurrentDate())
     }
     
+    // Функции редактирования цели
+    window.startEditGoal = startEditGoal
+    window.saveGoal = saveGoal
+    window.cancelEditGoal = cancelEditGoal
+    
     // Загружаем приёмы за текущий день
     loadMeals()
+}
+
+// ============================================
+// РЕДАКТИРОВАНИЕ ЦЕЛИ КАЛОРИЙ
+// ============================================
+
+function startEditGoal() {
+    const display = document.getElementById('calorie-goal-display')
+    const input = document.getElementById('calorie-goal-input')
+    const editBtn = display.nextElementSibling
+    
+    display.classList.add('hidden')
+    editBtn.classList.add('hidden')
+    input.classList.remove('hidden')
+    input.value = window.APP_CALORIE_GOAL
+    input.focus()
+    input.select()
+}
+
+function cancelEditGoal() {
+    const display = document.getElementById('calorie-goal-display')
+    const input = document.getElementById('calorie-goal-input')
+    const editBtn = display.nextElementSibling
+    
+    input.classList.add('hidden')
+    display.classList.remove('hidden')
+    editBtn.classList.remove('hidden')
+}
+
+async function saveGoal() {
+    const input = document.getElementById('calorie-goal-input')
+    const newGoal = parseInt(input.value) || 2000
+    
+    // Валидация
+    if (newGoal < 500 || newGoal > 10000) {
+        alert('Цель должна быть от 500 до 10000 ккал')
+        input.focus()
+        return
+    }
+    
+    // Если не изменилось — просто закрываем
+    if (newGoal === window.APP_CALORIE_GOAL) {
+        cancelEditGoal()
+        return
+    }
+    
+    try {
+        const response = await fetch('/api/user.php?action=update_goal', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ calorie_goal: newGoal })
+        })
+        
+        const data = await response.json()
+        
+        if (data.success) {
+            // Обновляем глобально и в UI
+            window.APP_CALORIE_GOAL = newGoal
+            document.getElementById('calorie-goal-value').textContent = newGoal
+            
+            cancelEditGoal()
+            
+            // Перезагружаем данные дня чтобы пересчитать прогресс
+            loadMeals()
+        } else {
+            alert('Ошибка: ' + (data.error || 'Не удалось сохранить'))
+        }
+    } catch (error) {
+        console.error('Ошибка сохранения цели:', error)
+        alert('Ошибка сохранения')
+    }
 }
 
 async function loadMeals(date) {
@@ -70,17 +146,17 @@ function renderMeals(meals) {
     })
     
     const mealTypes = [
-        { key: 'завтрак', label: 'Завтрак', icon: 'bakery_dining', color: 'orange' },
-        { key: 'обед', label: 'Обед', icon: 'restaurant', color: 'blue' },
-        { key: 'ужин', label: 'Ужин', icon: 'dinner_dining', color: 'indigo' },
-        { key: 'перекус', label: 'Перекус', icon: 'icecream', color: 'pink' }
+        { key: 'завтрак', label: 'Завтрак', icon: 'bakery_dining', colorClasses: 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400' },
+        { key: 'обед', label: 'Обед', icon: 'restaurant', colorClasses: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' },
+        { key: 'ужин', label: 'Ужин', icon: 'dinner_dining', colorClasses: 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400' },
+        { key: 'перекус', label: 'Перекус', icon: 'icecream', colorClasses: 'bg-pink-100 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400' }
     ]
     
     let html = ''
     
     mealTypes.forEach(mealType => {
         const items = grouped[mealType.key] || []
-        const totalCalories = items.reduce((sum, item) => sum + (item.calories || 0), 0)
+        const totalCalories = Math.round(items.reduce((sum, item) => sum + (parseFloat(item.calories) || 0), 0))
         
         if (items.length > 0) {
             // Развёрнутая карточка с продуктами
@@ -95,7 +171,7 @@ function renderMeals(meals) {
 }
 
 function renderMealCard(mealType, items, totalCalories, hasItems) {
-    const { label, icon, color } = mealType
+    const { label, icon, colorClasses } = mealType
     
     if (!hasItems) {
         // Пустая карточка
@@ -103,7 +179,7 @@ function renderMealCard(mealType, items, totalCalories, hasItems) {
             <div class="bg-white dark:bg-[#152822] rounded-2xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-sm transition-all hover:border-primary/50 group cursor-pointer mb-4" onclick="window.focusSearch('${mealType.key}')">
                 <div class="p-5 flex items-center justify-between">
                     <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-${color}-100 dark:bg-${color}-900/30 text-${color}-600 dark:text-${color}-400 flex items-center justify-center">
+                        <div class="w-10 h-10 rounded-full ${colorClasses} flex items-center justify-center">
                             <span class="material-symbols-outlined">${icon}</span>
                         </div>
                         <div>
@@ -127,7 +203,7 @@ function renderMealCard(mealType, items, totalCalories, hasItems) {
         <div class="bg-white dark:bg-[#152822] rounded-2xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-sm overflow-hidden mb-4">
             <div class="p-5 flex items-center justify-between border-b border-[#f0f4f3] dark:border-[#1c3029] bg-white dark:bg-[#152822]">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 rounded-full bg-${color}-100 dark:bg-${color}-900/30 text-${color}-600 dark:text-${color}-400 flex items-center justify-center">
+                    <div class="w-10 h-10 rounded-full ${colorClasses} flex items-center justify-center">
                         <span class="material-symbols-outlined">${icon}</span>
                     </div>
                     <div>
@@ -151,7 +227,7 @@ function renderMealCard(mealType, items, totalCalories, hasItems) {
                         <!-- Правая часть: КБЖУ + кнопка -->
                         <div class="flex items-center gap-4">
                             <div class="flex items-center gap-2 text-xs text-text-secondary">
-                                <span class="font-bold">${item.calories} ккал</span>
+                                <span class="font-bold">${Math.round(item.calories)} ккал</span>
                                 <span>•</span>
                                 <span>Б: ${parseFloat(item.proteins || 0).toFixed(1)}г</span>
                                 <span>•</span>

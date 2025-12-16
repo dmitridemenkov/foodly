@@ -121,6 +121,14 @@ function renderMiniCalendar() {
             renderMiniCalendar()
             updateCurrentDateDisplay()
             
+            // Переключаемся на дашборд если не на нём
+            const dashboardScreen = document.getElementById('dashboard')
+            if (dashboardScreen && !dashboardScreen.classList.contains('active')) {
+                // Симулируем клик по кнопке навигации
+                const dashboardBtn = document.querySelector('[data-screen="dashboard"]')
+                if (dashboardBtn) dashboardBtn.click()
+            }
+            
             // Загрузить данные за выбранный день
             if (window.dashboardModule) {
                 window.dashboardModule.loadMeals(currentDate)

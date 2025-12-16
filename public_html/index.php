@@ -32,6 +32,9 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/output.css">
     
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <style>
         /* Скрываем контент до загрузки иконок */
         .material-symbols-outlined {
@@ -240,7 +243,25 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
                             <span class="font-bold text-text-primary dark:text-white">
                                 <span id="calories-eaten">0</span> съедено
                             </span>
-                            <span class="text-text-secondary">Цель: <?= $calorieGoal ?></span>
+                            <!-- Редактируемая цель -->
+                            <div class="flex items-center gap-1">
+                                <span id="calorie-goal-display" class="text-text-secondary cursor-pointer hover:text-text-primary transition-colors" onclick="window.startEditGoal()">
+                                    Цель: <span id="calorie-goal-value"><?= $calorieGoal ?></span>
+                                </span>
+                                <button onclick="window.startEditGoal()" class="text-text-secondary/50 hover:text-primary transition-colors" title="Изменить цель">
+                                    <span class="material-symbols-outlined text-sm">edit</span>
+                                </button>
+                                <!-- Инпут (скрыт по умолчанию) -->
+                                <input 
+                                    type="number" 
+                                    id="calorie-goal-input"
+                                    class="hidden w-24 px-2 py-1 text-sm bg-white dark:bg-[#1c3029] border border-primary rounded text-right text-text-primary dark:text-white focus:outline-none"
+                                    min="500"
+                                    max="10000"
+                                    onkeydown="if(event.key==='Enter') window.saveGoal(); if(event.key==='Escape') window.cancelEditGoal();"
+                                    onblur="window.saveGoal()"
+                                >
+                            </div>
                         </div>
                         <div class="h-4 w-full bg-background-light dark:bg-[#1c3029] rounded-full overflow-hidden">
                             <div id="calories-progress" class="h-full bg-primary rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
@@ -269,8 +290,34 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
     <!-- Statistics Screen -->
     <section id="stats" class="screen hidden">
         <div class="w-full px-8 py-10">
-            <h2 class="text-3xl font-bold mb-6">Статистика</h2>
-            <p class="text-text-secondary">Скоро здесь будут графики и аналитика 📊</p>
+            <!-- Заголовок + переключатель периода -->
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+                <h2 class="text-3xl font-bold text-text-primary dark:text-white">Статистика</h2>
+                <div class="flex gap-2">
+                    <button 
+                        class="period-btn px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-lg font-medium transition-colors"
+                        data-days="7"
+                        onclick="window.changePeriod(7)"
+                    >7 дней</button>
+                    <button 
+                        class="period-btn px-4 py-2 bg-background-light dark:bg-[#1c3029] text-text-secondary rounded-lg font-medium transition-colors hover:bg-gray-200 dark:hover:bg-[#2a3f38]"
+                        data-days="14"
+                        onclick="window.changePeriod(14)"
+                    >14 дней</button>
+                    <button 
+                        class="period-btn px-4 py-2 bg-background-light dark:bg-[#1c3029] text-text-secondary rounded-lg font-medium transition-colors hover:bg-gray-200 dark:hover:bg-[#2a3f38]"
+                        data-days="30"
+                        onclick="window.changePeriod(30)"
+                    >30 дней</button>
+                </div>
+            </div>
+            
+            <!-- Контент статистики -->
+            <div id="stats-content">
+                <div class="flex items-center justify-center py-20">
+                    <span class="material-symbols-outlined text-4xl animate-spin text-primary">progress_activity</span>
+                </div>
+            </div>
         </div>
     </section>
     

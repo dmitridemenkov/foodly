@@ -7,6 +7,7 @@ import { initDashboard } from './dashboard.js'
 import { initNavigation } from './navigation.js'
 import { initCalendar } from './calendar.js'
 import { initMyProducts, initRecipeSearch, initEditRecipeSearch } from './my-products.js'
+import { initStats } from './stats.js'
 
 // Проверка авторизации при загрузке
 async function checkAuth() {
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initMyProducts()
     initRecipeSearch()
     initEditRecipeSearch()
+    initStats()
     
     console.log('✅ All modules initialized')
 })
