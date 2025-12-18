@@ -107,6 +107,11 @@ function switchScreen(screenId) {
         window.loadStats()
     }
     
+    // Загружаем избранное при переходе
+    if (screenId === 'favorites' && window.loadFavorites) {
+        window.loadFavorites()
+    }
+    
     // Активируем кнопку
     const activeBtn = document.querySelector(`[data-screen="${screenId}"]`)
     if (activeBtn) {

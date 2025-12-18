@@ -26,6 +26,19 @@ switch ($action) {
         $result = $authController->login($data['email'], $data['password']);
         echo json_encode($result);
         break;
+    
+    case 'register':
+        // POST /api/auth.php?action=register
+        $data = json_decode(file_get_contents('php://input'), true);
+        
+        if (!isset($data['email']) || !isset($data['password']) || !isset($data['name'])) {
+            echo json_encode(['success' => false, 'error' => 'Заполните все поля']);
+            exit;
+        }
+        
+        $result = $authController->register($data['email'], $data['password'], $data['name'], $data['calorie_goal'] ?? 2000);
+        echo json_encode($result);
+        break;
         
     case 'logout':
         // POST /api/auth.php?action=logout

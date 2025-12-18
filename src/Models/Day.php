@@ -11,15 +11,26 @@ class Day
      * Получить или создать день по дате
      * 
      * @param string $date Дата в формате Y-m-d
+     * @param int|null $userId ID пользователя (берётся из сессии если не указан)
      * @return array Данные дня (id, date)
      */
-    public static function getOrCreate(string $date): array
+    public static function getOrCreate(string $date, ?int $userId = null): array
     {
         $db = Database::getConnection();
         
-        // Проверяем существует ли день
-        $stmt = $db->prepare("SELECT id, date FROM days WHERE date = :date");
+        // Получаем user_id из сессии если не передан
+        if ($userId === null) {
+            $userId = $_SESSION['user_id'] ?? null;
+        }
+        
+        if (!$userId) {
+            throw new \Exception('User ID is required');
+        }
+        
+        // Проверяем существует ли день для этого пользователя
+        $stmt = $db->prepare("SELECT id, date FROM days WHERE date = :date AND user_id = :user_id");
         $stmt->bindValue(':date', $date, PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->execute();
         
         $day = $stmt->fetch();
@@ -29,8 +40,9 @@ class Day
         }
         
         // Создаём новый день
-        $stmt = $db->prepare("INSERT INTO days (date) VALUES (:date)");
+        $stmt = $db->prepare("INSERT INTO days (date, user_id) VALUES (:date, :user_id)");
         $stmt->bindValue(':date', $date, PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->execute();
         
         return [
@@ -124,19 +136,27 @@ class Day
      * Получить список всех дней с краткой статистикой
      * 
      * @param int $limit Количество дней
+     * @param int|null $userId ID пользователя
      * @return array Массив дней
      */
-    public static function getRecent(int $limit = 30): array
+    public static function getRecent(int $limit = 30, ?int $userId = null): array
     {
         $db = Database::getConnection();
+        
+        // Получаем user_id из сессии если не передан
+        if ($userId === null) {
+            $userId = $_SESSION['user_id'] ?? null;
+        }
         
         $stmt = $db->prepare("
             SELECT id, date, created_at
             FROM days
+            WHERE user_id = :user_id
             ORDER BY date DESC
             LIMIT :limit
         ");
         
+        $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->execute();
         

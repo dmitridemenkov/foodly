@@ -13,6 +13,7 @@ if (!isset($_SESSION['user_id'])) {
 
 $userId = $_SESSION['user_id'];
 $userName = $_SESSION['user_name'];
+$userEmail = $_SESSION['user_email'] ?? '';
 $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
 ?>
 <!DOCTYPE html>
@@ -178,15 +179,16 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
     
     <!-- User Profile -->
     <div class="p-4 border-t border-[#dbe6e2] dark:border-[#2a3f38]">
-        <div class="flex items-center gap-3">
+        <a href="/settings.php" class="flex items-center gap-3 p-2 -m-2 rounded-xl hover:bg-background-light dark:hover:bg-[#1c3029] transition-colors group">
             <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg">
-                <?= strtoupper(substr($userName, 0, 1)) ?>
+                <?= mb_strtoupper(mb_substr($userName, 0, 1, 'UTF-8'), 'UTF-8') ?>
             </div>
-            <div class="flex flex-col">
+            <div class="flex flex-col flex-1 min-w-0">
                 <span class="text-sm font-bold text-text-primary dark:text-white"><?= htmlspecialchars($userName) ?></span>
-                <span class="text-xs text-text-secondary">ID: <?= $userId ?></span>
+                <span class="text-xs text-text-secondary truncate"><?= htmlspecialchars($userEmail) ?></span>
             </div>
-        </div>
+            <span class="material-symbols-outlined text-text-secondary group-hover:text-primary transition-colors">settings</span>
+        </a>
     </div>
 </aside>
 
@@ -324,8 +326,12 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
     <!-- Favorites Screen -->
     <section id="favorites" class="screen hidden">
         <div class="w-full px-8 py-10">
-            <h2 class="text-3xl font-bold mb-6">Избранное</h2>
-            <p class="text-text-secondary">Скоро здесь будут избранные продукты ⭐</p>
+            <h2 class="text-3xl font-bold text-text-primary dark:text-white mb-8">Избранное</h2>
+            <div id="favorites-content">
+                <div class="flex items-center justify-center py-20">
+                    <span class="material-symbols-outlined text-4xl animate-spin text-primary">progress_activity</span>
+                </div>
+            </div>
         </div>
     </section>
     

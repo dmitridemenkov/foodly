@@ -16,7 +16,7 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вход - Foodly</title>
+    <title>Регистрация - Foodly</title>
     <link rel="stylesheet" href="/assets/css/output.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -36,13 +36,26 @@ if (isset($_SESSION['user_id'])) {
         </div>
         
         <h1 class="text-3xl font-bold text-center mb-2 text-gray-800">
-            Добро пожаловать в Foodly
+            Создать аккаунт
         </h1>
         <p class="text-center text-gray-500 mb-8">
-            Войдите, чтобы продолжить
+            Начни отслеживать питание уже сегодня
         </p>
         
-        <form id="login-form" class="space-y-5">
+        <form id="register-form" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Имя
+                </label>
+                <input 
+                    type="text" 
+                    name="name" 
+                    required
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
+                    placeholder="Как тебя зовут?"
+                >
+            </div>
+            
             <div>
                 <label class="block text-sm font-semibold text-gray-700 mb-2">
                     Email
@@ -64,8 +77,24 @@ if (isset($_SESSION['user_id'])) {
                     type="password" 
                     name="password" 
                     required
+                    minlength="6"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
-                    placeholder="••••••••"
+                    placeholder="Минимум 6 символов"
+                >
+            </div>
+            
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Цель калорий в день
+                </label>
+                <input 
+                    type="number" 
+                    name="calorie_goal" 
+                    value="2000"
+                    min="1000"
+                    max="5000"
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
+                    placeholder="2000"
                 >
             </div>
             
@@ -75,33 +104,35 @@ if (isset($_SESSION['user_id'])) {
                 type="submit"
                 class="w-full bg-green-500 text-white py-4 rounded-xl font-bold text-lg hover:bg-green-600 transition-all transform active:scale-95 shadow-lg"
             >
-                Войти
+                Зарегистрироваться
             </button>
         </form>
         
         <div class="mt-6 text-center">
             <p class="text-gray-500">
-                Нет аккаунта? 
-                <a href="/register.php" class="text-green-500 font-semibold hover:underline">Зарегистрироваться</a>
+                Уже есть аккаунт? 
+                <a href="/login.php" class="text-green-500 font-semibold hover:underline">Войти</a>
             </p>
         </div>
     </div>
     
     <script>
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault()
             
             const formData = new FormData(e.target)
             const data = {
+                name: formData.get('name'),
                 email: formData.get('email'),
-                password: formData.get('password')
+                password: formData.get('password'),
+                calorie_goal: parseInt(formData.get('calorie_goal')) || 2000
             }
             
             const errorDiv = document.getElementById('error-message')
             errorDiv.classList.add('hidden')
             
             try {
-                const response = await fetch('/api/auth.php?action=login', {
+                const response = await fetch('/api/auth.php?action=register', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -116,7 +147,7 @@ if (isset($_SESSION['user_id'])) {
                     errorDiv.classList.remove('hidden')
                 }
             } catch (error) {
-                console.error('Login error:', error)
+                console.error('Register error:', error)
                 errorDiv.textContent = 'Ошибка соединения с сервером'
                 errorDiv.classList.remove('hidden')
             }

@@ -103,6 +103,9 @@ class DayController
         }
 
         $db = \HealthDiet\Database::getConnection();
+        
+        // Получаем user_id из сессии
+        $userId = $_SESSION['user_id'] ?? null;
 
         // Получаем даты за последние N дней
         $endDate = date(\HealthDiet\Config::DATE_FORMAT);
@@ -111,12 +114,13 @@ class DayController
         $stmt = $db->prepare("
         SELECT id, date 
         FROM days 
-        WHERE date BETWEEN :start AND :end
+        WHERE date BETWEEN :start AND :end AND user_id = :user_id
         ORDER BY date DESC
     ");
 
         $stmt->bindValue(':start', $startDate, \PDO::PARAM_STR);
         $stmt->bindValue(':end', $endDate, \PDO::PARAM_STR);
+        $stmt->bindValue(':user_id', $userId, \PDO::PARAM_INT);
         $stmt->execute();
 
         $daysData = $stmt->fetchAll();

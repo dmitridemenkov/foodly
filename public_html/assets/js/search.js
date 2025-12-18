@@ -3,12 +3,24 @@
 // ============================================
 
 let searchTimeout = null
+let favoriteProductIds = new Set()
+let favoriteRecipeIds = new Set()
+
+// Экспортируем в window для синхронизации с другими модулями
+window.favoriteProductIds = favoriteProductIds
+window.favoriteRecipeIds = favoriteRecipeIds
 
 export function initSearch() {
     const searchInput = document.getElementById('product-search')
     const resultsDiv = document.getElementById('search-results')
     
     if (!searchInput) return
+    
+    // Загружаем ID избранных при старте
+    loadFavoriteIds()
+    
+    // Экспортируем функции
+    window.toggleFavorite = toggleFavorite
     
     searchInput.addEventListener('input', (e) => {
         const query = e.target.value.trim()
@@ -102,16 +114,29 @@ function displaySearchResults(products, recipes = []) {
     
     let html = ''
     
-    // Сначала рецепты (если есть)
+    // Сначала рецепты (если есть), избранные первыми
     if (recipes.length > 0) {
         html += `<div class="px-4 py-2 text-xs font-semibold text-purple-500 bg-purple-50 dark:bg-purple-900/20">Мои блюда</div>`
-        html += recipes.slice(0, 5).map(recipe => `
+        
+        // Сортируем: избранные сверху
+        const sortedRecipes = [...recipes].sort((a, b) => {
+            const aFav = favoriteRecipeIds.has(a.id) ? 0 : 1
+            const bFav = favoriteRecipeIds.has(b.id) ? 0 : 1
+            return aFav - bFav
+        })
+        
+        html += sortedRecipes.slice(0, 5).map(recipe => {
+            const isFavorite = favoriteRecipeIds.has(recipe.id)
+            return `
             <div class="flex items-center gap-3 px-5 py-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 border-b border-[#f0f4f3] dark:border-[#1c3029] transition-colors group cursor-pointer"
                 onclick="window.selectRecipe(${recipe.id}, '${escapeHtml(recipe.title)}')">
                 
-                <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                    <span class="material-symbols-outlined text-purple-500 text-lg">menu_book</span>
-                </div>
+                <button 
+                    onclick="window.toggleFavorite('recipe', ${recipe.id}, event)"
+                    class="flex-shrink-0 ${isFavorite ? 'text-yellow-500' : 'text-text-secondary'} hover:text-yellow-500 transition-colors"
+                >
+                    <span class="material-symbols-outlined text-xl">star</span>
+                </button>
                 
                 <div class="flex-1 min-w-0">
                     <div class="font-semibold text-text-primary dark:text-white group-hover:text-purple-500 transition-colors truncate">
@@ -128,21 +153,31 @@ function displaySearchResults(products, recipes = []) {
                     chevron_right
                 </span>
             </div>
-        `).join('')
+        `}).join('')
     }
     
-    // Затем продукты
+    // Затем продукты (избранные первыми)
     if (products.length > 0) {
         if (recipes.length > 0) {
             html += `<div class="px-4 py-2 text-xs font-semibold text-text-secondary bg-background-light dark:bg-[#1c3029]">Продукты</div>`
         }
-        html += products.slice(0, 10).map(product => `
+        
+        // Сортируем: избранные сверху
+        const sortedProducts = [...products].sort((a, b) => {
+            const aFav = favoriteProductIds.has(a.id) ? 0 : 1
+            const bFav = favoriteProductIds.has(b.id) ? 0 : 1
+            return aFav - bFav
+        })
+        
+        html += sortedProducts.slice(0, 10).map(product => {
+            const isFavorite = favoriteProductIds.has(product.id)
+            return `
             <div class="flex items-center gap-3 px-5 py-4 hover:bg-background-light dark:hover:bg-[#1c3029] border-b border-[#f0f4f3] dark:border-[#1c3029] last:border-b-0 transition-colors group cursor-pointer"
                 onclick="window.selectProduct(${product.id}, '${escapeHtml(product.title)}')">
                 
                 <button 
-                    onclick="event.stopPropagation(); console.log('В избранное:', ${product.id})"
-                    class="flex-shrink-0 text-text-secondary hover:text-yellow-500 transition-colors"
+                    onclick="window.toggleFavorite('product', ${product.id}, event)"
+                    class="flex-shrink-0 ${isFavorite ? 'text-yellow-500' : 'text-text-secondary'} hover:text-yellow-500 transition-colors"
                 >
                     <span class="material-symbols-outlined text-xl">star</span>
                 </button>
@@ -166,7 +201,7 @@ function displaySearchResults(products, recipes = []) {
                     chevron_right
                 </span>
             </div>
-        `).join('')
+        `}).join('')
     }
     
     resultsDiv.innerHTML = html
@@ -520,3 +555,71 @@ window.submitCreateProduct = async function() {
         alert('Ошибка создания продукта')
     }
 }
+
+// ============================================
+// ИЗБРАННОЕ
+// ============================================
+
+async function loadFavoriteIds() {
+    try {
+        const response = await fetch('/api/favorites.php?action=ids')
+        const data = await response.json()
+        
+        if (data.success) {
+            favoriteProductIds = new Set(data.product_ids)
+            favoriteRecipeIds = new Set(data.recipe_ids)
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки избранного:', error)
+    }
+}
+
+async function toggleFavorite(type, id, event) {
+    event.stopPropagation()
+    
+    const isProduct = type === 'product'
+    const set = isProduct ? favoriteProductIds : favoriteRecipeIds
+    const isFavorite = set.has(id)
+    
+    const btn = event.currentTarget
+    const icon = btn.querySelector('.material-symbols-outlined')
+    
+    try {
+        if (isFavorite) {
+            // Удаляем из избранного
+            const response = await fetch('/api/favorites.php?action=remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(isProduct ? { product_id: id } : { recipe_id: id })
+            })
+            const data = await response.json()
+            
+            if (data.success) {
+                set.delete(id)
+                icon.textContent = 'star'
+                icon.classList.remove('text-yellow-500')
+                icon.classList.add('text-text-secondary')
+            }
+        } else {
+            // Добавляем в избранное
+            const response = await fetch('/api/favorites.php?action=add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(isProduct ? { product_id: id } : { recipe_id: id })
+            })
+            const data = await response.json()
+            
+            if (data.success) {
+                set.add(id)
+                icon.textContent = 'star'
+                icon.classList.add('text-yellow-500')
+                icon.classList.remove('text-text-secondary')
+            }
+        }
+    } catch (error) {
+        console.error('Ошибка избранного:', error)
+    }
+}
+
+// Экспортируем для использования в других модулях
+export { favoriteProductIds, favoriteRecipeIds, loadFavoriteIds }

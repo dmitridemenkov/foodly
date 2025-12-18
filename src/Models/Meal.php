@@ -45,10 +45,29 @@ class Meal
     {
         $db = Database::getConnection();
         
+        // Сначала получаем day_id чтобы потом проверить
+        $stmt = $db->prepare("SELECT day_id FROM meals WHERE id = :id");
+        $stmt->execute([':id' => $mealId]);
+        $dayId = $stmt->fetchColumn();
+        
+        // Удаляем meal
         $stmt = $db->prepare("DELETE FROM meals WHERE id = :id");
         $stmt->bindValue(':id', $mealId, PDO::PARAM_INT);
+        $result = $stmt->execute();
         
-        return $stmt->execute();
+        // Если это был последний meal в дне — удаляем и day
+        if ($result && $dayId) {
+            $stmt = $db->prepare("SELECT COUNT(*) FROM meals WHERE day_id = :day_id");
+            $stmt->execute([':day_id' => $dayId]);
+            $count = $stmt->fetchColumn();
+            
+            if ($count == 0) {
+                $stmt = $db->prepare("DELETE FROM days WHERE id = :id");
+                $stmt->execute([':id' => $dayId]);
+            }
+        }
+        
+        return $result;
     }
     
     /**
