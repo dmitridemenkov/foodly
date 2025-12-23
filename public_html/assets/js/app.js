@@ -9,6 +9,8 @@ import { initCalendar } from './calendar.js'
 import { initMyProducts, initRecipeSearch, initEditRecipeSearch } from './my-products.js'
 import { initStats } from './stats.js'
 import { initFavorites } from './favorites.js'
+import { initBarcode } from './barcode.js'
+import { initAI } from './ai.js'
 
 // Проверка авторизации при загрузке
 async function checkAuth() {
@@ -44,6 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initEditRecipeSearch()
     initStats()
     initFavorites()
+    initBarcode()
+    initAI()
     
     console.log('✅ All modules initialized')
 })

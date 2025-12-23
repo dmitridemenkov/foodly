@@ -54,6 +54,7 @@ class ProductController
         $fats = (float)($input['fats'] ?? 0);
         $carbohydrates = (float)($input['carbohydrates'] ?? 0);
         $category = trim($input['category'] ?? 'Мои продукты');
+        $barcode = trim($input['barcode'] ?? '');
         
         if (empty($title)) {
             return ['error' => 'Название продукта обязательно'];
@@ -63,7 +64,7 @@ class ProductController
             return ['error' => 'Название слишком короткое'];
         }
         
-        $productId = Product::create($userId, $title, $calories, $proteins, $fats, $carbohydrates, $category);
+        $productId = Product::create($userId, $title, $calories, $proteins, $fats, $carbohydrates, $category, $barcode);
         
         return [
             'success' => true,

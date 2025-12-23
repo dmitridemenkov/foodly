@@ -3,6 +3,8 @@
 // ============================================
 
 let currentTab = 'products'
+let allProducts = []
+let allRecipes = []
 
 export function initMyProducts() {
     // Загружаем данные при переключении на экран
@@ -17,6 +19,14 @@ export function initMyProducts() {
     window.addIngredientToRecipe = addIngredientToRecipe
     window.removeIngredientFromRecipe = removeIngredientFromRecipe
     window.submitCreateRecipe = submitCreateRecipe
+    
+    // Поиск
+    const searchInput = document.getElementById('my-products-search')
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            filterMyItems(e.target.value.trim().toLowerCase())
+        })
+    }
 }
 
 function switchTab(tab) {
@@ -40,6 +50,32 @@ function switchTab(tab) {
         listProducts.classList.add('hidden')
         loadMyRecipes()
     }
+    
+    // Сбрасываем поиск при переключении табов
+    const searchInput = document.getElementById('my-products-search')
+    if (searchInput) searchInput.value = ''
+}
+
+function filterMyItems(query) {
+    if (currentTab === 'products') {
+        if (!query) {
+            renderMyProducts(allProducts)
+        } else {
+            const filtered = allProducts.filter(p => 
+                p.title.toLowerCase().includes(query)
+            )
+            renderMyProducts(filtered)
+        }
+    } else {
+        if (!query) {
+            renderMyRecipes(allRecipes)
+        } else {
+            const filtered = allRecipes.filter(r => 
+                r.title.toLowerCase().includes(query)
+            )
+            renderMyRecipes(filtered)
+        }
+    }
 }
 
 // ============================================
@@ -61,8 +97,10 @@ async function loadMyProducts() {
         const data = await response.json()
         
         if (data.success && data.products.length > 0) {
+            allProducts = data.products
             renderMyProducts(data.products)
         } else {
+            allProducts = []
             container.innerHTML = `
                 <div class="text-center py-12 text-text-secondary">
                     <span class="material-symbols-outlined text-5xl mb-3">inventory_2</span>
@@ -231,8 +269,10 @@ async function loadMyRecipes() {
         const data = await response.json()
         
         if (data.success && data.recipes.length > 0) {
+            allRecipes = data.recipes
             renderMyRecipes(data.recipes)
         } else {
+            allRecipes = []
             container.innerHTML = `
                 <div class="text-center py-12 text-text-secondary">
                     <span class="material-symbols-outlined text-5xl mb-3">menu_book</span>

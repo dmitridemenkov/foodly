@@ -17,13 +17,14 @@ class Product
         float $proteins,
         float $fats,
         float $carbohydrates,
-        string $category = 'Мои продукты'
+        string $category = 'Мои продукты',
+        string $barcode = ''
     ): int {
         $db = Database::getConnection();
         
         $stmt = $db->prepare("
-            INSERT INTO products (title, calories, proteins, fats, carbohydrates, category, search_title, user_id)
-            VALUES (:title, :calories, :proteins, :fats, :carbohydrates, :category, :search_title, :user_id)
+            INSERT INTO products (title, calories, proteins, fats, carbohydrates, category, search_title, user_id, barcode)
+            VALUES (:title, :calories, :proteins, :fats, :carbohydrates, :category, :search_title, :user_id, :barcode)
         ");
         
         $stmt->bindValue(':title', $title, PDO::PARAM_STR);
@@ -34,6 +35,7 @@ class Product
         $stmt->bindValue(':category', $category, PDO::PARAM_STR);
         $stmt->bindValue(':search_title', mb_strtolower($title), PDO::PARAM_STR);
         $stmt->bindValue(':user_id', $userId, PDO::PARAM_INT);
+        $stmt->bindValue(':barcode', $barcode ?: null);
         $stmt->execute();
         
         return (int)$db->lastInsertId();

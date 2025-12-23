@@ -208,20 +208,52 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
             
             <!-- SEARCH BAR -->
             <div class="bg-white dark:bg-[#152822] rounded-3xl p-6 mb-8 border border-[#dbe6e2] dark:border-[#2a3f38] shadow-sm">
-                <div class="relative">
-                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">
-                        search
-                    </span>
-                    <input 
-                        type="text" 
-                        id="product-search"
-                        placeholder="Поиск продуктов... (яйца, курица, хлеб)"
-                        autocomplete="off"
-                        class="w-full pl-12 pr-4 py-4 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-primary focus:outline-none transition-colors"
-                    >
-                    <!-- Dropdown результатов -->
-                    <div id="search-results" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#152822] rounded-xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-lg max-h-96 overflow-y-auto z-50">
-                        <!-- JS заполнит -->
+                <div class="relative flex gap-3">
+                    <div class="relative flex-1">
+                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">
+                            search
+                        </span>
+                        <input 
+                            type="text" 
+                            id="product-search"
+                            placeholder="Поиск продуктов... (яйца, курица, хлеб)"
+                            autocomplete="off"
+                            class="w-full pl-12 pr-4 py-4 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-primary focus:outline-none transition-colors"
+                        >
+                        <!-- Dropdown результатов -->
+                        <div id="search-results" class="hidden absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#152822] rounded-xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-lg max-h-96 overflow-y-auto z-50">
+                            <!-- JS заполнит -->
+                        </div>
+                    </div>
+                    
+                    <!-- Barcode Button -->
+                    <div class="relative">
+                        <button 
+                            id="barcode-btn"
+                            onclick="window.toggleBarcodeMenu()"
+                            class="w-14 h-14 flex items-center justify-center bg-background-light dark:bg-[#1c3029] hover:bg-primary hover:text-white rounded-xl transition-colors text-text-secondary"
+                            title="Поиск по штрихкоду"
+                        >
+                            <span class="material-symbols-outlined text-2xl">barcode_scanner</span>
+                        </button>
+                        
+                        <!-- Barcode Dropdown -->
+                        <div id="barcode-menu" class="hidden absolute top-full right-0 mt-2 bg-white dark:bg-[#152822] rounded-xl border border-[#dbe6e2] dark:border-[#2a3f38] shadow-lg overflow-hidden z-50 min-w-[200px]">
+                            <button 
+                                onclick="window.openBarcodeScanner()"
+                                class="w-full flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-[#1c3029] transition-colors text-left"
+                            >
+                                <span class="material-symbols-outlined text-primary">photo_camera</span>
+                                <span class="text-text-primary dark:text-white font-medium">Сканировать камерой</span>
+                            </button>
+                            <button 
+                                onclick="window.openBarcodeManual()"
+                                class="w-full flex items-center gap-3 px-4 py-3 hover:bg-background-light dark:hover:bg-[#1c3029] transition-colors text-left border-t border-[#dbe6e2] dark:border-[#2a3f38]"
+                            >
+                                <span class="material-symbols-outlined text-primary">keyboard</span>
+                                <span class="text-text-primary dark:text-white font-medium">Ввести вручную</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -360,7 +392,7 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
             </div>
             
             <!-- Табы: Продукты / Блюда -->
-            <div class="flex gap-2 mb-6">
+            <div class="flex gap-2 mb-4">
                 <button 
                     id="tab-products" 
                     onclick="window.switchMyProductsTab('products')"
@@ -375,6 +407,17 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
                 >
                     Блюда
                 </button>
+            </div>
+            
+            <!-- Поиск -->
+            <div class="relative mb-6">
+                <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">search</span>
+                <input 
+                    type="text" 
+                    id="my-products-search"
+                    placeholder="Быстрый поиск..."
+                    class="w-full pl-12 pr-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-primary focus:outline-none transition-colors"
+                >
             </div>
             
             <!-- Список продуктов -->
@@ -794,6 +837,190 @@ $calorieGoal = $_SESSION['calorie_goal'] ?? 2000;
         </div>
     </div>
 </div>
+
+<!-- Barcode Scanner Modal -->
+<div id="barcode-scanner-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl w-full max-w-md overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-[#dbe6e2] dark:border-[#2a3f38]">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Сканировать штрихкод</h3>
+            <button onclick="window.closeBarcodeScanner()" class="w-8 h-8 flex items-center justify-center hover:bg-background-light dark:hover:bg-[#1c3029] rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-text-secondary">close</span>
+            </button>
+        </div>
+        <div class="p-4">
+            <div id="barcode-scanner-container" class="w-full aspect-[4/3] bg-black rounded-xl overflow-hidden relative">
+                <video id="barcode-video" class="w-full h-full object-cover"></video>
+                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div class="w-64 h-32 border-2 border-primary rounded-lg"></div>
+                </div>
+            </div>
+            <p class="text-center text-text-secondary text-sm mt-3">Наведите камеру на штрихкод</p>
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Manual Input Modal -->
+<div id="barcode-manual-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl w-full max-w-md p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Ввести штрихкод</h3>
+            <button onclick="window.closeBarcodeManual()" class="w-8 h-8 flex items-center justify-center hover:bg-background-light dark:hover:bg-[#1c3029] rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-text-secondary">close</span>
+            </button>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <input 
+                    type="text" 
+                    id="barcode-input"
+                    placeholder="Введите штрихкод (например: 4600682000013)"
+                    inputmode="numeric"
+                    class="w-full px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-primary focus:outline-none transition-colors text-center text-lg tracking-widest"
+                >
+            </div>
+            
+            <div id="barcode-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm"></div>
+            
+            <button 
+                onclick="window.searchByBarcode()"
+                class="w-full py-3 bg-primary hover:bg-primary-hover text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+                <span class="material-symbols-outlined">search</span>
+                Найти продукт
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Barcode Result Modal -->
+<div id="barcode-result-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#152822] rounded-2xl w-full max-w-md p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-text-primary dark:text-white">Найден продукт</h3>
+            <button onclick="window.closeBarcodeResult()" class="w-8 h-8 flex items-center justify-center hover:bg-background-light dark:hover:bg-[#1c3029] rounded-lg transition-colors">
+                <span class="material-symbols-outlined text-text-secondary">close</span>
+            </button>
+        </div>
+        
+        <div id="barcode-result-content">
+            <!-- JS заполнит -->
+        </div>
+    </div>
+</div>
+
+<!-- AI Assistant Button -->
+<button 
+    onclick="window.toggleAIChat()"
+    class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-green-400 to-green-600 rounded-full shadow-lg hover:shadow-xl transition-all hover:scale-105 z-40 flex items-center justify-center group"
+    title="Спросить Фиа"
+>
+    <div id="ai-circle" class="ai-circle idle">
+        <div class="ai-circle-inner"></div>
+    </div>
+</button>
+
+<!-- AI Chat Panel -->
+<div id="ai-chat-panel" class="fixed top-0 right-0 h-full w-full max-w-md bg-background-light dark:bg-background-dark border-l border-[#dbe6e2] dark:border-[#2a3f38] shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+    <!-- Header -->
+    <div class="flex items-center justify-between p-4 border-b border-[#dbe6e2] dark:border-[#2a3f38] bg-white dark:bg-[#152822]">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                <span class="text-white font-bold">F</span>
+            </div>
+            <div>
+                <h3 class="font-bold text-text-primary dark:text-white">Фиа</h3>
+                <p id="ai-thinking" class="hidden text-xs text-primary">думает...</p>
+                <p class="ai-status-online text-xs text-text-secondary">онлайн</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-1">
+            <button onclick="window.clearAIHistory()" class="w-10 h-10 flex items-center justify-center hover:bg-background-light dark:hover:bg-[#1c3029] rounded-xl transition-colors" title="Очистить историю">
+                <span class="material-symbols-outlined text-text-secondary">delete</span>
+            </button>
+            <button onclick="window.closeAIChat()" class="w-10 h-10 flex items-center justify-center hover:bg-background-light dark:hover:bg-[#1c3029] rounded-xl transition-colors">
+                <span class="material-symbols-outlined text-text-secondary">close</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Messages -->
+    <div id="ai-messages" class="flex-1 overflow-y-auto p-4">
+        <div class="ai-welcome flex flex-col items-center justify-center h-full text-center">
+            <div class="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center mb-4">
+                <span class="text-white text-2xl font-bold">F</span>
+            </div>
+            <h4 class="text-lg font-bold text-text-primary dark:text-white mb-2">Привет! Я Фиа 👋</h4>
+            <p class="text-text-secondary text-sm max-w-xs">
+                Твой AI-помощник в Foodly. Спроси меня о питании, калориях или попроси совет!
+            </p>
+        </div>
+    </div>
+    
+    <!-- Input -->
+    <div class="p-4 border-t border-[#dbe6e2] dark:border-[#2a3f38] bg-white dark:bg-[#152822]">
+        <div class="flex gap-3">
+            <input 
+                type="text" 
+                id="ai-input"
+                placeholder="Напиши сообщение..."
+                class="flex-1 px-4 py-3 bg-background-light dark:bg-[#1c3029] border-2 border-transparent rounded-xl text-text-primary dark:text-white placeholder-text-secondary focus:border-primary focus:outline-none transition-colors"
+            >
+            <button 
+                id="ai-send-btn"
+                onclick="window.sendAIMessage()"
+                class="w-12 h-12 bg-primary hover:bg-primary-hover text-white rounded-xl transition-colors flex items-center justify-center disabled:opacity-50"
+            >
+                <span class="material-symbols-outlined">send</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- AI Circle Styles -->
+<style>
+.ai-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    position: relative;
+}
+
+.ai-circle-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, #4ade80, #22c55e, #16a34a, #4ade80);
+    animation: rotate 8s linear infinite;
+}
+
+.ai-circle.idle .ai-circle-inner {
+    animation: rotate 8s linear infinite, breathe 4s ease-in-out infinite;
+}
+
+.ai-circle.thinking .ai-circle-inner {
+    animation: rotate 1s linear infinite, pulse-think 1s ease-in-out infinite;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.8; transform: rotate(0deg) scale(1); }
+    50% { opacity: 1; transform: rotate(180deg) scale(1.05); }
+}
+
+@keyframes pulse-think {
+    0%, 100% { transform: rotate(0deg) scale(1); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+    50% { transform: rotate(180deg) scale(1.1); box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+}
+
+#ai-thinking:not(.hidden) + .ai-status-online {
+    display: none;
+}
+</style>
 
 <!-- Передаём данные в JS -->
 <script>
